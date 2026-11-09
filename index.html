@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>پشکنینی لێدانی دڵ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#FCE4EC,#F3E5F5);font-family:Tahoma,"Segoe UI",sans-serif;color:#4a2c2a;padding:16px;gap:18px}
+.top{font-weight:800;font-size:20px;text-align:center;line-height:1.7}
+.card{width:100%;max-width:380px;min-height:520px;background:#fff;border-radius:24px;border:1.5px solid #f8bbd0;
+  box-shadow:0 10px 30px rgba(216,27,96,.15);padding:18px;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;gap:14px;animation:fade .4s}
+.screen.active{display:flex}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.pill{background:#fce4ec;color:#c2185b;font-weight:800;text-align:center;padding:10px;border-radius:30px;font-size:17px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#status{font-size:14px;color:#888;font-weight:700}
+#status.scan{color:#2e9e5b}
+.bpm{background:#fce4ec;color:#c2185b;padding:6px 12px;border-radius:12px;font-weight:800;font-size:14px;direction:ltr}
+.ecg{height:110px;border-radius:14px;border:1px solid #f8bbd0;
+  background-size:20px 20px;
+  background-image:linear-gradient(to right,rgba(240,98,146,.15) 1px,transparent 1px),linear-gradient(to bottom,rgba(240,98,146,.15) 1px,transparent 1px)}
+canvas{width:100%;height:100%;display:block}
+.finger-wrap{display:flex;justify-content:center;margin:10px 0;position:relative}
+.finger{width:140px;height:140px;border-radius:50%;border:4px solid #f8bbd0;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;background:#fff5f8;position:relative}
+.finger svg{width:80px;height:80px;fill:none;stroke:#D81B60;stroke-width:2.4;stroke-linecap:round}
+.scanning .finger{animation:pulse 1.2s infinite ease-in-out;border-color:#D81B60}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.plus{position:absolute;bottom:0;right:calc(50% - 82px);width:32px;height:32px;border-radius:50%;background:#2196f3;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;animation:pulse 1.5s infinite}
+.scanning .plus{display:none}
+.hint{text-align:center;color:#6d4c41;font-size:14px;line-height:1.8}
+.center{align-items:center;justify-content:center;min-height:480px}
+.spinner{width:56px;height:56px;border:5px solid rgba(216,27,96,.12);border-left-color:#D81B60;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.item{border-bottom:1px dashed #f8bbd0;padding-bottom:10px}
+.item small{display:block;color:#c2185b;font-weight:800;margin-bottom:4px;font-size:12px}
+.item p{font-size:15px;line-height:1.7}
+.cta{background:linear-gradient(90deg,#f06292,#D81B60);color:#fff;border:0;border-radius:30px;padding:12px;font-size:17px;font-weight:800;cursor:pointer;
+  animation:pulse 1.4s infinite}
+.note{font-size:12px;color:#8d6e63;background:#fff5f8;border-radius:12px;padding:10px;line-height:1.7}
+.reset{background:#fff;border:1.5px solid #f48fb1;color:#c2185b;border-radius:30px;padding:12px 28px;font-size:16px;font-weight:800;cursor:pointer;display:none}
+.reset.show{display:block}
+</style>
+</head>
+<body>
+<div class="top">بۆ ئەمەیان قسە ناکەم<br>ئێوە بڕیار بدەن..!</div>
+
+<div class="card" id="card">
+  <!-- دۆخی ١ و ٢ -->
+  <div class="screen active" id="s-scan">
+    <div class="pill">پشکنینی لێدانی دڵ 🩺❤️</div>
+    <div class="row">
+      <span id="status">وەستاوە</span>
+      <span class="bpm">لێدان: <span id="bpm">-</span> BPM</span>
+    </div>
+    <div class="ecg"><canvas id="ecg"></canvas></div>
+    <div class="finger-wrap" id="fw">
+      <div class="finger" id="finger">
+        <svg viewBox="0 0 64 64"><path d="M32 8c-12 0-20 9-20 20v6M32 14c-8 0-14 6-14 14v10c0 6-2 10-4 14M32 20c-4 0-8 4-8 8v12c0 6-1 10-3 14M32 26c0 8 0 18-2 28M40 28c0-5-3-8-8-8M46 30c0-9-6-16-14-16M46 38v6c0 4-1 8-2 12M38 36v10c0 4-1 7-2 10"/></svg>
+      </div>
+      <div class="plus">+</div>
+    </div>
+    <div class="hint">پەنجەت لەسەر هەستەوەرەکە دابنێ بۆ دەستپێکردنی پشکنین !</div>
+  </div>
+
+  <!-- دۆخی ٣ -->
+  <div class="screen center" id="s-load">
+    <div class="spinner"></div>
+    <div class="hint" style="font-weight:700">ئامادەکردنی ئەنجامی پشکنین...</div>
+  </div>
+
+  <!-- دۆخی ٤ -->
+  <div class="screen" id="s-result">
+    <div class="pill">پشکنینی تایبەتی دڵ 💖</div>
+    <div class="item"><small>🩺 دەستنیشانکردنی پزیشکی</small><p>تێکچوونی نەرم و نیانی لێدانی دڵ 💗</p></div>
+    <div class="item"><small>📋 ئەنجامی پشکنین</small><p>سەلمێندرا کە تەنها بۆ تۆ لێدەدات</p></div>
+    <div class="item"><small>💞 ڕێژەی خۆشەویستی</small><p>زیاتر لە توانای ئامێرەکە، بێ کۆتایی!</p></div>
+    <div class="item"><small>💊 چارەسەر</small><p>تکایە دەستبەجێ نامەیەک بنێرە و قسەم لەگەڵ بکە 🥺</p></div>
+    <button class="cta" onclick="window.open('https://t.me/','_blank')">خێرا بکە</button>
+    <div class="note">✚ ئەمە تەنها ئەپێکی گاڵتەجاڕییە و ئامێری پزیشکی ڕاستەقینە نییە.</div>
+  </div>
+</div>
+
+<button class="reset" id="reset">سپاس دکتۆر گیان ! 🩺</button>
+
+<!-- ئەگەر دەتەوێت مۆسیقای کوردی هەبێت، فایلەکەت لێرە دابنێ: -->
+<audio id="music" src="music.mp3" loop preload="auto"></audio>
+
+<script>
+const $=id=>document.getElementById(id);
+const screens={scan:$('s-scan'),load:$('s-load'),result:$('s-result')};
+const show=n=>{Object.values(screens).forEach(s=>s.classList.remove('active'));screens[n].classList.add('active');
+  $('reset').classList.toggle('show',n==='result')};
+
+/* ---------- دەنگی ترپەی دڵ (lub-dub) ---------- */
+let ac;
+function thump(t,freq,vol){
+  const o=ac.createOscillator(),g=ac.createGain(),f=ac.createBiquadFilter();
+  o.type='sine';o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(freq*0.5,t+0.14);
+  f.type='lowpass';f.frequency.value=220;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.015);g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
+  o.connect(f);f.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+0.2);
+}
+function heartbeat(){const t=ac.currentTime;thump(t,75,1);thump(t+0.17,60,0.7)}
+
+/* ---------- ECG ---------- */
+const cv=$('ecg'),cx=cv.getContext('2d');
+let W,H,ys=[];
+function size(){W=cv.width=cv.clientWidth*2;H=cv.height=cv.clientHeight*2;ys=new Array(Math.floor(W/3)).fill(H/2)}
+addEventListener('resize',size);size();
+const g=(p,c,w,a)=>a*Math.exp(-((p-c)**2)/(2*w*w));
+const wave=p=>g(p,.08,.025,.12)*-1*-1 + g(p,.17,.008,-.1) + g(p,.20,.012,1) + g(p,.23,.010,-.22) + g(p,.42,.04,.25);
+let running=false,beatStart=0,period=.68,bpm=88,raf;
+function draw(now){
+  if(!running)return;
+  if(now/1000>=beatStart+period){beatStart=now/1000;bpm=87+Math.floor(Math.random()*5);period=60/bpm;
+    $('bpm').textContent=bpm;heartbeat()}
+  const p=(now/1000-beatStart)/period;
+  ys.shift();ys.push(H*0.62-wave(p)*H*0.5);
+  cx.clearRect(0,0,W,H);cx.beginPath();cx.strokeStyle='#e53935';cx.lineWidth=3;cx.lineJoin='round';
+  ys.forEach((y,i)=>i?cx.lineTo(i*3,y):cx.moveTo(0,y));cx.stroke();
+  raf=requestAnimationFrame(draw);
+}
+function flat(){cx.clearRect(0,0,W,H);cx.beginPath();cx.strokeStyle='#e53935';cx.lineWidth=3;cx.moveTo(0,H/2);cx.lineTo(W,H/2);cx.stroke()}
+flat();
+
+/* ---------- جووڵەی دۆخەکان ---------- */
+let busy=false;
+function start(){
+  if(busy)return;busy=true;
+  ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();
+  const m=$('music');m.volume=.6;m.play().catch(()=>{});
+  $('fw').classList.add('scanning');$('card').classList.add('scanning');
+  $('status').textContent='لە پشکنیندایە...';$('status').className='scan';
+  running=true;beatStart=performance.now()/1000-period;raf=requestAnimationFrame(draw);
+  setTimeout(()=>{m.volume=.25},0);
+  setTimeout(()=>{ // کۆتایی پشکنین
+    running=false;cancelAnimationFrame(raf);m.volume=.6;show('load');
+    setTimeout(()=>show('result'),3000);
+  },6000);
+}
+$('finger').addEventListener('click',start);
+$('fw').addEventListener('click',start);
+$('reset').addEventListener('click',()=>{
+  busy=false;$('fw').classList.remove('scanning');$('card').classList.remove('scanning');
+  $('status').textContent='وەستاوە';$('status').className='';$('bpm').textContent='-';
+  size();flat();show('scan');
+});
+</script>
+</body>
+</html>
+
